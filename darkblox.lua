@@ -186,6 +186,61 @@ local commit = shared.CustomCommit and tostring(shared.CustomCommit) or shared.S
 loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VW-Add/"..tostring(commit).."/newnightsintheforest.lua", true))()
 
 
- 
-      
-                     
+--[[
+  Branding override: replace displayed "Voidware" texts, discord links and logos with "Dark Blocks" equivalents.
+  This block runs after the remote UI is loaded and attempts to find/replace relevant TextLabels/TextButtons/TextBoxes
+  and ImageLabels/ImageButtons inside CoreGui and the LocalPlayer's PlayerGui. It only replaces visible strings/images,
+  and runs a few times to catch GUIs that may spawn after initial load.
+]]
+
+task.spawn(function()
+    local Players = game:GetService("Players")
+    if not Players.LocalPlayer then
+        Players.PlayerAdded:Wait()
+    end
+
+    local newName = "Dark Blocks"
+    local newDiscord = "https://discord.gg/HhM4GnrCz9"
+    local newImage = "https://cdn.discordapp.com/attachments/1324111511123398708/1416978424412770425/file_00000000bc9c52308ad733d54b761129.png?ex=68cc1b3e&is=68cac9be&hm=0dcdd892fca344ab3201c4ed03491f572736ae0bf86aecb620496c555ae16107"
+
+    local function replaceInObject(obj)
+        pcall(function()
+            if not obj.Parent then return end
+            if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+                local txt = obj.Text
+                if type(txt) == "string" then
+                    if string.find(txt, "Voidware") or string.find(txt, "voidware") or string.find(txt, "discord.gg") then
+                        txt = string.gsub(txt, "Voidware Official", newName)
+                        txt = string.gsub(txt, "Voidware", newName)
+                        txt = string.gsub(txt, "voidware", newName)
+                        txt = string.gsub(txt, "discord.gg/voidware", newDiscord)
+                        txt = string.gsub(txt, "discord.gg/7SMSD3Cf", newDiscord)
+                        obj.Text = txt
+                    end
+                end
+            elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+                local img = obj.Image
+                if type(img) == "string" and (string.find(string.lower(img), "void") or string.find(string.lower(img), "vw") or string.find(string.lower(img), "vape") ) then
+                    obj.Image = newImage
+                end
+            end
+        end)
+    end
+
+    local function scanAndReplace(root)
+        for _,v in pairs(root:GetDescendants()) do
+            replaceInObject(v)
+        end
+    end
+
+    -- Try a few times to catch GUIs that spawn with delay
+    for i=1,30 do
+        pcall(function()
+            scanAndReplace(game:GetService("CoreGui"))
+            if Players.LocalPlayer and Players.LocalPlayer:FindFirstChild("PlayerGui") then
+                scanAndReplace(Players.LocalPlayer.PlayerGui)
+            end
+        end)
+        task.wait(1)
+    end
+end)
