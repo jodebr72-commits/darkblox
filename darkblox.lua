@@ -85,6 +85,7 @@ end
 shared.CheatEngineMode = shared.CheatEngineMode or CheatEngineMode
 shared.ForcePlayerGui = true
 
+-- 🔔 Notificação traduzida
 if game.PlaceId == 79546208627805 then
     pcall(function()
         game:GetService("StarterGui"):SetCore("SendNotification", {
