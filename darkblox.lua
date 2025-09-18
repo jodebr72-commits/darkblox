@@ -8,29 +8,22 @@
 
                 🚀 DARK BLOX — 99 Nights In The Forest 🚀
 ----------------------------------------------------------------------------
-
   IMPORTANT:
   You must copy and use the FULL script below. Do NOT press on the link.
 
   loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VW-Add/main/loader.lua", true))()
 
 ----------------------------------------------------------------------------
-
   For support head over to discord.gg/7SMSD3Cf
 ----------------------------------------------------------------------------
-
 ]]
-
 if not game:IsLoaded() then return end
-
 local CheatEngineMode = false
-
 if (not getgenv) or (getgenv and type(getgenv) ~= "function") then CheatEngineMode = true end
 if getgenv and not getgenv().shared then CheatEngineMode = true; getgenv().shared = {}; end
 if getgenv and not getgenv().debug then CheatEngineMode = true; getgenv().debug = {traceback = function(string) return string end} end
 if getgenv and not getgenv().require then CheatEngineMode = true; end
 if getgenv and getgenv().require and type(getgenv().require) ~= "function" then CheatEngineMode = true end
-
 local debugChecks = {
     Type = "table",
     Functions = {
@@ -40,7 +33,6 @@ local debugChecks = {
         "getproto"
     }
 }
-
 local function checkExecutor()
     if identifyexecutor ~= nil and type(identifyexecutor) == "function" then
         local suc, res = pcall(function()
@@ -67,9 +59,28 @@ local function checkExecutor()
         end
     end
 end
-
 task.spawn(function() pcall(checkExecutor) end)
-
+local function checkDebug()
+    if CheatEngineMode then return end
+    if not getgenv().debug then 
+        CheatEngineMode = true 
+    else 
+        if type(debug) ~= debugChecks.Type then 
+            CheatEngineMode = true
+        else 
+            for i, v in pairs(debugChecks.Functions) do
+                if not debug[v] or (debug[v] and type(debug[v]) ~= "function") then 
+                    CheatEngineMode = true 
+                else 
+                    local suc, res = pcall(debug[v]) 
+                    if tostring(res) == "Not Implemented" then 
+                        CheatEngineMode = true 
+                    end
+                end
+            end
+        end
+    end
+end
 shared.CheatEngineMode = shared.CheatEngineMode or CheatEngineMode
 shared.ForcePlayerGui = true
 
@@ -77,7 +88,7 @@ if game.PlaceId == 79546208627805 then
     pcall(function()
         game:GetService("StarterGui"):SetCore("SendNotification", {
             Title = "Dark Blox | 99 Nights In The Forest",
-            Text = "Go In Game for Dark Blox to load :D [You are in lobby currently]",
+            Text = "Entre no jogo para Dark Blox carregar :D [Você está no lobby]",
             Duration = 10
         })
     end)
@@ -92,7 +103,7 @@ task.spawn(function()
                 if suc and service then
                     self[key] = service
                     return service
-                else 
+                else
                     warn(`[Services] Warning: "{key}" is not a valid Roblox service.`)
                     return nil
                 end
@@ -102,12 +113,11 @@ task.spawn(function()
         local Players = Services.Players
         local TextChatService = Services.TextChatService
         local ChatService = Services.ChatService
-
-        repeat task.wait() until game:IsLoaded() and Players.LocalPlayer ~= nil
-
+        repeat
+            task.wait()
+        until game:IsLoaded() and Players.LocalPlayer ~= nil
         local chatVersion = TextChatService and TextChatService.ChatVersion or Enum.ChatVersion.LegacyChatService
         local TagRegister = shared.TagRegister or {}
-
         if not shared.CheatEngineMode then
             if chatVersion == Enum.ChatVersion.TextChatService then
                 TextChatService.OnIncomingMessage = function(data)
@@ -169,11 +179,18 @@ task.spawn(function()
     end)
 end)
 
--- Forcing main branch to ensure script loads correctly in Delta
-local commit = "main"
-loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VW-Add/"..commit.."/newnightsintheforest.lua", true))()
+local commit = shared.CustomCommit and tostring(shared.CustomCommit) or shared.StagingMode and "staging" or "3b3b6b58e840cad9ae32a59b77c15d89218c6147"
 
--- Branding override
+loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VW-Add/"..tostring(commit).."/newnightsintheforest.lua", true))()
+
+
+--[[
+  Branding override: replace displayed "Voidware" texts, discord links and logos with "Dark Blocks" equivalents.
+  This block runs after the remote UI is loaded and attempts to find/replace relevant TextLabels/TextButtons/TextBoxes
+  and ImageLabels/ImageButtons inside CoreGui and the LocalPlayer's PlayerGui. It only replaces visible strings/images,
+  and runs a few times to catch GUIs that may spawn after initial load.
+]]
+
 task.spawn(function()
     local Players = game:GetService("Players")
     if not Players.LocalPlayer then
@@ -190,14 +207,36 @@ task.spawn(function()
             if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
                 local txt = obj.Text
                 if type(txt) == "string" then
+                    -- Tradução do painel dos players
+                    txt = string.gsub(txt, "Information", "Informações")
+                    txt = string.gsub(txt, "Automation", "Automação")
+                    txt = string.gsub(txt, "Bring Stuff", "Trazer Itens")
+                    txt = string.gsub(txt, "Main", "Principal")
+                    txt = string.gsub(txt, "Fishing", "Pesca")
+                    txt = string.gsub(txt, "FasterBring %[BETA%]", "Trazer Rápido [BETA]")
+                    txt = string.gsub(txt, "Bring Location", "Trazer Localização")
+                    txt = string.gsub(txt, "Max Per item", "Máx Por Item")
+                    txt = string.gsub(txt, "Bring cooldowm", "Tempo de Recarga")
+                    txt = string.gsub(txt, "No Bring Amount Limit", "Sem Limite de Quantidade")
+                    txt = string.gsub(txt, "Bring Height", "Altura de Trazer")
+                    txt = string.gsub(txt, "Bring Fuel %[BETA%]", "Trazer Combustível [BETA]")
+                    txt = string.gsub(txt, "Fuel", "Combustível")
+                    txt = string.gsub(txt, "Bring Logs %[Beta%]", "Trazer Troncos [BETA]")
+                    txt = string.gsub(txt, "Bring Food & Healing", "Trazer Comida & Cura")
+                    txt = string.gsub(txt, "Food & Healing", "Comida & Cura")
+                    txt = string.gsub(txt, "Bring Gears", "Trazer Equipamentos")
+                    txt = string.gsub(txt, "Gears", "Equipamentos")
+                    txt = string.gsub(txt, "Bring Guns &  Armor", "Trazer Armas & Armaduras")
+                    txt = string.gsub(txt, "Other", "Outros")
+
                     if string.find(txt, "Voidware") or string.find(txt, "voidware") or string.find(txt, "discord.gg") then
                         txt = string.gsub(txt, "Voidware Official", newName)
                         txt = string.gsub(txt, "Voidware", newName)
                         txt = string.gsub(txt, "voidware", newName)
                         txt = string.gsub(txt, "discord.gg/voidware", newDiscord)
                         txt = string.gsub(txt, "discord.gg/7SMSD3Cf", newDiscord)
-                        obj.Text = txt
                     end
+                    obj.Text = txt
                 end
             elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
                 local img = obj.Image
@@ -214,6 +253,7 @@ task.spawn(function()
         end
     end
 
+    -- Try a few times to catch GUIs that spawn with delay
     for i=1,30 do
         pcall(function()
             scanAndReplace(game:GetService("CoreGui"))
