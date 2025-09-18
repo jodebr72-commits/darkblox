@@ -1,4 +1,4 @@
---[[
+--[[ 
 ██████╗  █████╗ ██████╗ ██╗  ██╗     ██████╗ ██╗      ██████╗ ██╗  ██╗ ██████╗ ██╗  ██╗
 ██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝    ██╔═══██╗██║     ██╔═══██╗██║ ██╔╝██╔═══██╗██║ ██╔╝
 ██████╔╝███████║██████╔╝█████╔╝     ██║   ██║██║     ██║   ██║█████╔╝ ██║   ██║█████╔╝ 
@@ -7,15 +7,15 @@
 ╚═╝     ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝     ╚═════╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
 
                 🚀 DARK BLOX — 99 Nights In The Forest 🚀
-----------------------------------------------------------------------------
-  IMPORTANT:
+---------------------------------------------------------------------------- 
+  IMPORTANT: 
   You must copy and use the FULL script below. Do NOT press on the link.
 
   loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VW-Add/main/loader.lua", true))()
 
-----------------------------------------------------------------------------
+---------------------------------------------------------------------------- 
   For support head over to discord.gg/7SMSD3Cf
-----------------------------------------------------------------------------
+---------------------------------------------------------------------------- 
 ]]
 if not game:IsLoaded() then return end
 local CheatEngineMode = false
@@ -184,12 +184,12 @@ local commit = shared.CustomCommit and tostring(shared.CustomCommit) or shared.S
 loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeVoidware/VW-Add/"..tostring(commit).."/newnightsintheforest.lua", true))()
 
 
---[[
+--[[ 
   Branding override: replace displayed "Voidware" texts, discord links and logos with "Dark Blocks" equivalents.
   This block runs after the remote UI is loaded and attempts to find/replace relevant TextLabels/TextButtons/TextBoxes
   and ImageLabels/ImageButtons inside CoreGui and the LocalPlayer's PlayerGui. It only replaces visible strings/images,
   and runs a few times to catch GUIs that may spawn after initial load.
-]]
+]] 
 
 task.spawn(function()
     local Players = game:GetService("Players")
@@ -227,6 +227,10 @@ task.spawn(function()
                     txt = string.gsub(txt, "Bring Gears", "Trazer Equipamentos")
                     txt = string.gsub(txt, "Gears", "Equipamentos")
                     txt = string.gsub(txt, "Bring Guns &  Armor", "Trazer Armas & Armaduras")
+                    txt = string.gsub(txt, "Bring Guns &Armor", "Trazer Armas & Armaduras")
+                    txt = string.gsub(txt, "Guns & Armor", "Armas & Armaduras")
+                    txt = string.gsub(txt, "Bring Outross", "Trazer Outros")
+                    txt = string.gsub(txt, "Outross", "Outros")
                     txt = string.gsub(txt, "Other", "Outros")
 
                     if string.find(txt, "Voidware") or string.find(txt, "voidware") or string.find(txt, "discord.gg") then
