@@ -233,6 +233,18 @@ task.spawn(function()
                     txt = string.gsub(txt, "Outross", "Outros")
                     txt = string.gsub(txt, "Other", "Outros")
 
+                    -- Novas traduções acrescentadas
+                    txt = string.gsub(txt, "Bring Settings", "Configurações de Trazer")
+                    txt = string.gsub(txt, "Use Freecam for Bring Items", "Usar Câmera Livre para Trazer Itens")
+                    txt = string.gsub(txt, "Faster Bring %[BETA%]", "Trazer Mais Rápido [BETA]")
+                    txt = string.gsub(txt, "Workbench", "Bancada de Trabalho")
+                    txt = string.gsub(txt, "Fire", "Fogueira")
+                    txt = string.gsub(txt, "Bring Cooldow", "Tempo de Recarga")
+                    txt = string.gsub(txt, "Bring Logs %[BTEA%]", "Trazer Troncos [BETA]")
+                    txt = string.gsub(txt, "Log", "Tronco")
+                    txt = string.gsub(txt, "Pickup AII Flowers", "Coletar Todas as Flores")
+                    txt = string.gsub(txt, "Collect All Gold Stacks", "Coletar Todas as Pilhas de Ouro")
+
                     if string.find(txt, "Voidware") or string.find(txt, "voidware") or string.find(txt, "discord.gg") then
                         txt = string.gsub(txt, "Voidware Official", newName)
                         txt = string.gsub(txt, "Voidware", newName)
