@@ -2,11 +2,10 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local StarterGui = game:GetService("StarterGui")
-local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
--- ANTI-CHEAT APRIMORADO
+-- ANTI-CHEAT
 local CE_Mode = false
 if (not getgenv) or (getgenv and type(getgenv) ~= "function") then CE_Mode = true end
 if getgenv and not getgenv().shared then CE_Mode = true; getgenv().shared = {} end
@@ -49,7 +48,7 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(recordOnce)
 
--- TELEPORT COM ANTI-CHEAT REFORÇADO
+-- TELEPORT SEGURO (CLIENT+SERVER)
 local function teleport()
     if CE_Mode then
         StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Não é seguro executar.", Duration=3})
@@ -70,16 +69,13 @@ local function teleport()
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if not humanoid or humanoid.Health <= 0 then return end
 
+    -- TELEPORTE GRADUAL + SERVER
     task.spawn(function()
-        task.wait(0.2) -- delay anti-cheat
-
-        local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
-        local hrp = char:WaitForChild("HumanoidRootPart")
+        local hrp = char.HumanoidRootPart
         local startPos = hrp.Position
         local endPos = savedSpawnCFrame.Position + Vector3.new(0,3,0)
-
-        -- Teleporte gradual, frame a frame (anti-cheat)
         local steps = 25
+
         for i = 1, steps do
             if humanoid.Health <= 0 then return end
             local interp = startPos:Lerp(endPos, i/steps)
@@ -87,12 +83,13 @@ local function teleport()
             RunService.Heartbeat:Wait()
         end
 
-        -- MoveTo como fallback seguro
-        pcall(function() char:MoveTo(endPos) end)
-
-        -- Chamada segura de RemoteEvent para teleporte
+        -- Envia para o servidor para validar o teleporte
+        local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
         if remote and remote:IsA("RemoteEvent") then
-            pcall(function() remote:FireServer(savedSpawnCFrame) end)
+            pcall(function() remote:FireServer(endPos) end)
+        else
+            -- Fallback seguro MoveTo
+            pcall(function() char:MoveTo(endPos) end)
         end
 
         StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport seguro realizado", Duration=2})
