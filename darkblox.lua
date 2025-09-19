@@ -48,7 +48,7 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(recordOnce)
 
--- FUNÇÃO TELEPORT
+-- FUNÇÃO TELEPORT APRIMORADA
 local function teleport()
     if CE_Mode then
         StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Não é seguro executar.", Duration=3})
@@ -68,23 +68,28 @@ local function teleport()
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
     local hrp = char.HumanoidRootPart
 
-    -- Delay pequeno antes de mover (reduz detecção)
     task.spawn(function()
-        task.wait(0.15)
+        task.wait(0.15) -- delay para evitar anti-cheat
 
-        -- TENTA REMOTEEVENT SERVER-SIDE
         local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
         if remote and remote:IsA("RemoteEvent") then
+            -- Tween gradual antes do RemoteEvent final
+            local tween = TweenService:Create(hrp, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
+            tween:Play()
+            tween.Completed:Wait()
+            -- Envia RemoteEvent no final do tween
             pcall(function() remote:FireServer(savedSpawnCFrame) end)
             StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport seguro via servidor", Duration=2})
             return
         end
 
-        -- Fallback client-side com Tween
+        -- Fallback client-side com Tween mais lento
         local ok, err = pcall(function()
-            local tween = TweenService:Create(hrp, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
+            local tween = TweenService:Create(hrp, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
             tween:Play()
             tween.Completed:Wait()
+            -- Garante posição final
+            hrp.CFrame = savedSpawnCFrame + Vector3.new(0,3,0)
         end)
         if ok then
             StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport realizado (client-side)", Duration=2})
