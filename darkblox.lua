@@ -83,12 +83,10 @@ local function teleport()
             RunService.Heartbeat:Wait()
         end
 
-        -- Envia para o servidor para validar o teleporte
         local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
         if remote and remote:IsA("RemoteEvent") then
             pcall(function() remote:FireServer(endPos) end)
         else
-            -- Fallback seguro MoveTo
             pcall(function() char:MoveTo(endPos) end)
         end
 
@@ -96,13 +94,13 @@ local function teleport()
     end)
 end
 
--- GUI
+-- DRAG FUNCTION
 local function makeDraggable(frame)
     local UserInputService = game:GetService("UserInputService")
     local dragging, dragInput, dragStart, startPos
 
     frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
@@ -116,7 +114,7 @@ local function makeDraggable(frame)
     end)
 
     frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
         end
     end)
@@ -124,11 +122,13 @@ local function makeDraggable(frame)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
 end
 
+-- GUI
 local function createGui()
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
     if playerGui:FindFirstChild("DarkblocksGui") then return end
@@ -144,7 +144,6 @@ local function createGui()
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BackgroundTransparency = 0.1
     frame.BorderSizePixel = 0
-
     makeDraggable(frame)
 
     -- Título
@@ -176,7 +175,6 @@ local function createGui()
 
     local switchLabel = Instance.new("TextLabel", switchFrame)
     switchLabel.Size = UDim2.new(0.7, 0, 1, 0)
-    switchLabel.Position = UDim2.new(0, 0, 0, 0)
     switchLabel.BackgroundTransparency = 1
     switchLabel.Text = "Teleportar"
     switchLabel.Font = Enum.Font.SourceSansBold
@@ -218,7 +216,7 @@ local function createGui()
         StarterGui:SetCore("SendNotification", {Title="Dark Blocks", Text="Link do Discord copiado!", Duration=2})
     end)
 
-    -- Logo quando minimizado
+    -- Bolinha (logo) para restaurar
     local logoBtn = Instance.new("ImageButton", screenGui)
     logoBtn.Size = UDim2.new(0, 60, 0, 60)
     logoBtn.Position = UDim2.new(0.5, -30, 0.8, 0)
@@ -228,7 +226,6 @@ local function createGui()
 
     local corner = Instance.new("UICorner", logoBtn)
     corner.CornerRadius = UDim.new(1, 0)
-
     makeDraggable(logoBtn)
 
     minimize.MouseButton1Click:Connect(function()
