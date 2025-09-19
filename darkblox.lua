@@ -1,85 +1,133 @@
--- LocalScript (coloque em StarterPlayerScripts)
+-- LocalScript (StarterPlayerScripts)
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Variável que guardará o CFrame do spawn inicial do jogador
+-- ANTI-CHEAT / EXECUTOR CHECKS
+local CheatEngineMode = false
+if (not getgenv) or (getgenv and type(getgenv) ~= "function") then CheatEngineMode = true end
+if getgenv and not getgenv().shared then CheatEngineMode = true; getgenv().shared = {} end
+if getgenv and not getgenv().debug then CheatEngineMode = true; getgenv().debug = {traceback = function(string) return string end} end
+
+local function checkExecutor()
+    if identifyexecutor ~= nil and type(identifyexecutor) == "function" then
+        local suc,res = pcall(function() return identifyexecutor() end)
+        if suc and res then
+            local blacklist = {'solara','cryptic','xeno','ember','ronix'}
+            for i,v in pairs(blacklist) do
+                if string.find(string.lower(tostring(res)), v) then
+                    CheatEngineMode = true
+                end
+            end
+        end
+    end
+end
+task.spawn(function() pcall(checkExecutor) end)
+
+-- SPAWN SAVE
 local savedSpawnCFrame = nil
-local spawnSaved = false -- garante que só salva uma vez
+local spawnSaved = false
 
--- Função que registra o spawn apenas uma vez
-local function onCharacterAdded(character)
-    local hrp = character:WaitForChild("HumanoidRootPart", 5)
+local function recordOnce(character)
+    local hrp = character:WaitForChild("HumanoidRootPart",5)
     if hrp and not spawnSaved then
         savedSpawnCFrame = hrp.CFrame
         spawnSaved = true
-        warn("Spawn inicial salvo em:", tostring(savedSpawnCFrame))
+        warn("Spawn inicial salvo:", savedSpawnCFrame)
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Spawn inicial salvo", Duration=2})
+        end)
     end
 end
 
--- Se o character já existir no momento do script, registramos também
 if LocalPlayer.Character then
-    task.spawn(function()
-        onCharacterAdded(LocalPlayer.Character)
+    task.spawn(function() recordOnce(LocalPlayer.Character) end)
+end
+LocalPlayer.CharacterAdded:Connect(recordOnce)
+
+-- FUNÇÃO TELEPORT
+local function teleport()
+    if CheatEngineMode then
+        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Não é seguro executar.", Duration=3})
+        return
+    end
+
+    if not savedSpawnCFrame then
+        local sp = workspace:FindFirstChildWhichIsA("SpawnLocation")
+        if sp then savedSpawnCFrame = sp.CFrame + Vector3.new(0,5,0)
+        else
+            StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Spawn não definido.", Duration=2})
+            return
+        end
+    end
+
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+
+    -- TENTA TELEPORT CLIENT-SIDE
+    local success = false
+    local ok, err = pcall(function()
+        local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
+        tween:Play()
+        tween.Completed:Wait()
+        success = true
     end)
+
+    if success then
+        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport realizado (client-side)", Duration=2})
+        return
+    end
+
+    -- SE CLIENT-SIDE FALHAR, TENTA REMOTEEVENT
+    local remote = ReplicatedStorage:FindFirstChild("TeleportRequest")
+    if remote and remote:IsA("RemoteEvent") then
+        pcall(function() remote:FireServer(savedSpawnCFrame) end)
+        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Pedido enviado para servidor", Duration=2})
+    else
+        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Falha no teleport e RemoteEvent não encontrado", Duration=3})
+    end
 end
 
--- Conectamos para o caso de ser a primeira vez do spawn
-LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
-
--- Função de criação do GUI simples
-local function createTeleportGui()
+-- GUI
+local function createGui()
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-    if playerGui:FindFirstChild("TeleportGui_v1") then return end
+    if playerGui:FindFirstChild("TeleportGui") then return end
 
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "TeleportGui_v1"
+    screenGui.Name = "TeleportGui"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
-    local frame = Instance.new("Frame")
+    local frame = Instance.new("Frame", screenGui)
     frame.Size = UDim2.new(0, 240, 0, 80)
     frame.Position = UDim2.new(0.5, -120, 0.82, 0)
     frame.AnchorPoint = Vector2.new(0.5, 0)
     frame.BackgroundTransparency = 0.15
     frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     frame.BorderSizePixel = 0
-    frame.Parent = screenGui
 
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 28)
-    title.Position = UDim2.new(0, 0, 0, 4)
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1,0,0,28)
+    title.Position = UDim2.new(0,0,0,4)
     title.BackgroundTransparency = 1
     title.Text = "Teleport"
     title.Font = Enum.Font.SourceSansBold
     title.TextSize = 20
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.Parent = frame
+    title.TextColor3 = Color3.fromRGB(255,255,255)
 
-    local teleportBtn = Instance.new("TextButton")
-    teleportBtn.Size = UDim2.new(0.9, 0, 0, 40)
-    teleportBtn.Position = UDim2.new(0.05, 0, 0.45, 0)
-    teleportBtn.Text = "TELEPORTAR"
-    teleportBtn.Font = Enum.Font.SourceSansBold
-    teleportBtn.TextSize = 20
-    teleportBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 200)
-    teleportBtn.BorderSizePixel = 0
-    teleportBtn.Parent = frame
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0.9,0,0,40)
+    btn.Position = UDim2.new(0.05,0,0.45,0)
+    btn.Text = "TELEPORTAR"
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 20
+    btn.BackgroundColor3 = Color3.fromRGB(50,120,200)
+    btn.BorderSizePixel = 0
 
-    teleportBtn.MouseButton1Click:Connect(function()
-        if savedSpawnCFrame and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = LocalPlayer.Character.HumanoidRootPart
-            hrp.CFrame = savedSpawnCFrame + Vector3.new(0, 3, 0)
-        else
-            pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Teleport",
-                    Text = "Spawn ainda não registrado.",
-                    Duration = 3
-                })
-            end)
-        end
-    end)
+    btn.MouseButton1Click:Connect(teleport)
 end
 
--- Cria o GUI
-createTeleportGui()
+createGui()
