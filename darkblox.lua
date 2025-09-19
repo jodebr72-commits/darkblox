@@ -63,31 +63,28 @@ local function teleport()
         end
     end
 
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = char.HumanoidRootPart
-
-    -- TENTA TELEPORT CLIENT-SIDE
-    local success = false
-    local ok, err = pcall(function()
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
-        tween:Play()
-        tween.Completed:Wait()
-        success = true
-    end)
-
-    if success then
-        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport realizado (client-side)", Duration=2})
+    -- TENTA TELEPORT VIA REMOTEEVENT (server-side)
+    local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
+    if remote and remote:IsA("RemoteEvent") then
+        pcall(function() remote:FireServer(savedSpawnCFrame) end)
+        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport seguro realizado", Duration=2})
         return
     end
 
-    -- SE CLIENT-SIDE FALHAR, TENTA REMOTEEVENT
-    local remote = ReplicatedStorage:FindFirstChild("TeleportRequest")
-    if remote and remote:IsA("RemoteEvent") then
-        pcall(function() remote:FireServer(savedSpawnCFrame) end)
-        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Pedido enviado para servidor", Duration=2})
-    else
-        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Falha no teleport e RemoteEvent não encontrado", Duration=3})
+    -- Fallback: client-side (pode ser bloqueado pelo servidor)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local hrp = char.HumanoidRootPart
+        local ok, err = pcall(function()
+            local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
+            tween:Play()
+            tween.Completed:Wait()
+        end)
+        if ok then
+            StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport realizado (client-side)", Duration=2})
+        else
+            StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Falha no teleport client-side", Duration=3})
+        end
     end
 end
 
