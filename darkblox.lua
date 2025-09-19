@@ -96,7 +96,39 @@ local function teleport()
     end)
 end
 
--- GUI (Darkblocks atualizado)
+-- GUI
+local function makeDraggable(frame)
+    local UserInputService = game:GetService("UserInputService")
+    local dragging, dragInput, dragStart, startPos
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
 local function createGui()
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
     if playerGui:FindFirstChild("DarkblocksGui") then return end
@@ -106,120 +138,107 @@ local function createGui()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
-    -- Painel principal
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 280, 0, 160)
-    frame.Position = UDim2.new(0.5, -140, 0.7, 0)
-    frame.AnchorPoint = Vector2.new(0.5, 0)
+    local frame = Instance.new("Frame", screenGui)
+    frame.Size = UDim2.new(0, 260, 0, 150)
+    frame.Position = UDim2.new(0.5, -130, 0.7, 0)
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BackgroundTransparency = 0.1
     frame.BorderSizePixel = 0
-    frame.Active = true
-    frame.Draggable = true
-    frame.Parent = screenGui
+
+    makeDraggable(frame)
 
     -- Título
-    local titleBar = Instance.new("TextLabel", frame)
-    titleBar.Size = UDim2.new(1, -30, 0, 28)
-    titleBar.Position = UDim2.new(0, 5, 0, 5)
-    titleBar.BackgroundTransparency = 1
-    titleBar.Text = "Darkblocks"
-    titleBar.Font = Enum.Font.SourceSansBold
-    titleBar.TextSize = 20
-    titleBar.TextColor3 = Color3.fromRGB(255,255,255)
-    titleBar.TextXAlignment = Enum.TextXAlignment.Left
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1, -30, 0, 30)
+    title.Position = UDim2.new(0, 10, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "Dark Blocks"
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 20
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextXAlignment = Enum.TextXAlignment.Left
 
     -- Botão minimizar
-    local minimizeBtn = Instance.new("TextButton", frame)
-    minimizeBtn.Size = UDim2.new(0, 24, 0, 24)
-    minimizeBtn.Position = UDim2.new(1, -28, 0, 5)
-    minimizeBtn.Text = "-"
-    minimizeBtn.Font = Enum.Font.SourceSansBold
-    minimizeBtn.TextSize = 20
-    minimizeBtn.TextColor3 = Color3.fromRGB(255,255,255)
-    minimizeBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-    minimizeBtn.BorderSizePixel = 0
+    local minimize = Instance.new("TextButton", frame)
+    minimize.Size = UDim2.new(0, 30, 0, 30)
+    minimize.Position = UDim2.new(1, -30, 0, 0)
+    minimize.BackgroundTransparency = 1
+    minimize.Text = "−"
+    minimize.Font = Enum.Font.SourceSansBold
+    minimize.TextSize = 24
+    minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-    -- Switch de Teleportar
-    local container = Instance.new("Frame", frame)
-    container.Size = UDim2.new(0.9,0,0,30)
-    container.Position = UDim2.new(0.05,0,0,50)
-    container.BackgroundTransparency = 1
+    -- Switch Teleportar
+    local switchFrame = Instance.new("Frame", frame)
+    switchFrame.Size = UDim2.new(0.9, 0, 0, 40)
+    switchFrame.Position = UDim2.new(0.05, 0, 0, 40)
+    switchFrame.BackgroundTransparency = 1
 
-    local label = Instance.new("TextLabel", container)
-    label.Size = UDim2.new(0.7,0,1,0)
-    label.BackgroundTransparency = 1
-    label.Text = "Teleportar"
-    label.Font = Enum.Font.SourceSans
-    label.TextSize = 18
-    label.TextColor3 = Color3.fromRGB(255,255,255)
-    label.TextXAlignment = Enum.TextXAlignment.Left
+    local switchLabel = Instance.new("TextLabel", switchFrame)
+    switchLabel.Size = UDim2.new(0.7, 0, 1, 0)
+    switchLabel.Position = UDim2.new(0, 0, 0, 0)
+    switchLabel.BackgroundTransparency = 1
+    switchLabel.Text = "Teleportar"
+    switchLabel.Font = Enum.Font.SourceSansBold
+    switchLabel.TextSize = 18
+    switchLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    switchLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-    local switch = Instance.new("TextButton", container)
-    switch.Size = UDim2.new(0.25,0,0.8,0)
-    switch.Position = UDim2.new(0.75,0,0.1,0)
+    local switch = Instance.new("TextButton", switchFrame)
+    switch.Size = UDim2.new(0.3, 0, 0.8, 0)
+    switch.Position = UDim2.new(0.7, 0, 0.1, 0)
+    switch.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     switch.Text = "OFF"
     switch.Font = Enum.Font.SourceSansBold
-    switch.TextSize = 14
-    switch.BackgroundColor3 = Color3.fromRGB(120,0,0)
-    switch.TextColor3 = Color3.fromRGB(255,255,255)
-    switch.BorderSizePixel = 0
+    switch.TextSize = 16
+    switch.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-    local state = false
     switch.MouseButton1Click:Connect(function()
-        if not state then
-            state = true
-            switch.Text = "ON"
-            switch.BackgroundColor3 = Color3.fromRGB(0,170,0)
-
-            -- Chama teleporte
-            teleport()
-
-            -- volta pro OFF depois
-            task.delay(1, function()
-                state = false
-                switch.Text = "OFF"
-                switch.BackgroundColor3 = Color3.fromRGB(120,0,0)
-            end)
-        end
+        switch.Text = "ON"
+        switch.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+        teleport()
+        task.wait(0.5)
+        switch.Text = "OFF"
+        switch.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     end)
 
     -- Botão Discord
     local discordBtn = Instance.new("TextButton", frame)
-    discordBtn.Size = UDim2.new(0.9,0,0,30)
-    discordBtn.Position = UDim2.new(0.05,0,0,100)
+    discordBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    discordBtn.Position = UDim2.new(0.05, 0, 0, 90)
     discordBtn.Text = "Atualizações no Discord"
     discordBtn.Font = Enum.Font.SourceSansBold
-    discordBtn.TextSize = 16
-    discordBtn.TextColor3 = Color3.fromRGB(255,255,255)
-    discordBtn.BackgroundColor3 = Color3.fromRGB(50,120,200)
+    discordBtn.TextSize = 18
+    discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    discordBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 200)
     discordBtn.BorderSizePixel = 0
+
     discordBtn.MouseButton1Click:Connect(function()
         setclipboard("https://discord.gg/7SMSD3Cf")
-        StarterGui:SetCore("SendNotification", {Title="Darkblocks", Text="Link do Discord copiado!", Duration=2})
+        StarterGui:SetCore("SendNotification", {Title="Dark Blocks", Text="Link do Discord copiado!", Duration=2})
     end)
 
-    -- Logo minimizada
-    local logoButton = Instance.new("ImageButton")
-    logoButton.Name = "MiniLogo"
-    logoButton.Size = UDim2.new(0,50,0,50)
-    logoButton.Position = UDim2.new(0.5, -25, 0.8, 0)
-    logoButton.AnchorPoint = Vector2.new(0.5,0)
-    logoButton.BackgroundTransparency = 1
-    logoButton.Image = "https://cdn.discordapp.com/attachments/1324111511123398708/1416978424412770425/file_00000000bc9c52308ad733d54b761129.png"
-    logoButton.Visible = false
-    logoButton.Active = true
-    logoButton.Draggable = true
-    logoButton.Parent = screenGui
+    -- Logo quando minimizado
+    local logoBtn = Instance.new("ImageButton", screenGui)
+    logoBtn.Size = UDim2.new(0, 60, 0, 60)
+    logoBtn.Position = UDim2.new(0.5, -30, 0.8, 0)
+    logoBtn.BackgroundTransparency = 1
+    logoBtn.Image = "https://cdn.discordapp.com/attachments/1324111511123398708/1416978424412770425/file_00000000bc9c52308ad733d54b761129.png?ex=68cebe3e&is=68cd6cbe&hm=086ee4d4aeb4b8681b1a3493b9a9148938016e4c9dd731a4c2ff5ef3e2c69a8e&"
+    logoBtn.Visible = false
 
-    -- Minimizar / restaurar
-    minimizeBtn.MouseButton1Click:Connect(function()
+    local corner = Instance.new("UICorner", logoBtn)
+    corner.CornerRadius = UDim.new(1, 0)
+
+    makeDraggable(logoBtn)
+
+    minimize.MouseButton1Click:Connect(function()
         frame.Visible = false
-        logoButton.Visible = true
+        logoBtn.Visible = true
     end)
-    logoButton.MouseButton1Click:Connect(function()
+
+    logoBtn.MouseButton1Click:Connect(function()
         frame.Visible = true
-        logoButton.Visible = false
+        logoBtn.Visible = false
     end)
 end
 
