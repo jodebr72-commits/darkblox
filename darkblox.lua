@@ -5,32 +5,33 @@ local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- ANTI-CHEAT / EXECUTOR CHECKS
-local CheatEngineMode = false
-if (not getgenv) or (getgenv and type(getgenv) ~= "function") then CheatEngineMode = true end
-if getgenv and not getgenv().shared then CheatEngineMode = true; getgenv().shared = {} end
-if getgenv and not getgenv().debug then CheatEngineMode = true; getgenv().debug = {traceback = function(string) return string end} end
+-- ANTI-CHEAT APRIMORADO
+local CE_Mode = false
+if (not getgenv) or (getgenv and type(getgenv) ~= "function") then CE_Mode = true end
+if getgenv and not getgenv().shared then CE_Mode = true; getgenv().shared = {} end
+if getgenv and not getgenv().debug then CE_Mode = true; getgenv().debug = {traceback = function(str) return str end} end
 
-local function checkExecutor()
+local function CheckExec()
     if identifyexecutor ~= nil and type(identifyexecutor) == "function" then
         local suc,res = pcall(function() return identifyexecutor() end)
         if suc and res then
-            local blacklist = {'solara','cryptic','xeno','ember','ronix'}
-            for i,v in pairs(blacklist) do
+            local black = {'solara','cryptic','xeno','ember','ronix'}
+            for i,v in pairs(black) do
                 if string.find(string.lower(tostring(res)), v) then
-                    CheatEngineMode = true
+                    CE_Mode = true
                 end
             end
         end
     end
 end
-task.spawn(function() pcall(checkExecutor) end)
+task.spawn(function() pcall(CheckExec) end)
 
 -- SPAWN SAVE
 local savedSpawnCFrame = nil
 local spawnSaved = false
 
 local function recordOnce(character)
+    task.wait(0.2) -- delay mínimo para evitar anti-cheat
     local hrp = character:WaitForChild("HumanoidRootPart",5)
     if hrp and not spawnSaved then
         savedSpawnCFrame = hrp.CFrame
@@ -49,7 +50,7 @@ LocalPlayer.CharacterAdded:Connect(recordOnce)
 
 -- FUNÇÃO TELEPORT
 local function teleport()
-    if CheatEngineMode then
+    if CE_Mode then
         StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Não é seguro executar.", Duration=3})
         return
     end
@@ -63,20 +64,25 @@ local function teleport()
         end
     end
 
-    -- TENTA TELEPORT VIA REMOTEEVENT (server-side)
-    local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
-    if remote and remote:IsA("RemoteEvent") then
-        pcall(function() remote:FireServer(savedSpawnCFrame) end)
-        StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport seguro realizado", Duration=2})
-        return
-    end
-
-    -- Fallback: client-side (pode ser bloqueado pelo servidor)
     local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local hrp = char.HumanoidRootPart
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+
+    -- Delay pequeno antes de mover (reduz detecção)
+    task.spawn(function()
+        task.wait(0.15)
+
+        -- TENTA REMOTEEVENT SERVER-SIDE
+        local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
+        if remote and remote:IsA("RemoteEvent") then
+            pcall(function() remote:FireServer(savedSpawnCFrame) end)
+            StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport seguro via servidor", Duration=2})
+            return
+        end
+
+        -- Fallback client-side com Tween
         local ok, err = pcall(function()
-            local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
+            local tween = TweenService:Create(hrp, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
             tween:Play()
             tween.Completed:Wait()
         end)
@@ -85,7 +91,7 @@ local function teleport()
         else
             StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Falha no teleport client-side", Duration=3})
         end
-    end
+    end)
 end
 
 -- GUI
