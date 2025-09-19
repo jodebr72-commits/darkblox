@@ -4,6 +4,7 @@ local LocalPlayer = Players.LocalPlayer
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 -- ANTI-CHEAT APRIMORADO
 local CE_Mode = false
@@ -48,7 +49,7 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(recordOnce)
 
--- FUNÇÃO TELEPORT APRIMORADA E CORRIGIDA
+-- FUNÇÃO TELEPORT APRIMORADA COM ANTI-CHEAT MELHORADO
 local function teleport()
     if CE_Mode then
         StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Não é seguro executar.", Duration=3})
@@ -66,29 +67,46 @@ local function teleport()
 
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
 
     task.spawn(function()
-        task.wait(0.15)
+        task.wait(0.2) -- delay anti-cheat
 
         local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
         if remote and remote:IsA("RemoteEvent") then
             local hrp = char:WaitForChild("HumanoidRootPart")
-            local tween = TweenService:Create(hrp, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
-            tween:Play()
-            tween.Completed:Wait()
-            -- MOVE usando MoveTo para não morrer
-            pcall(function() char:MoveTo(savedSpawnCFrame.Position) end)
+
+            -- Tween frame a frame, simulando movimento natural
+            local steps = 20
+            local startPos = hrp.Position
+            local endPos = savedSpawnCFrame.Position + Vector3.new(0,3,0)
+            for i = 1, steps do
+                if humanoid.Health <= 0 then return end
+                local interp = startPos:Lerp(endPos, i/steps)
+                hrp.CFrame = CFrame.new(interp)
+                RunService.Heartbeat:Wait()
+            end
+
+            pcall(function() char:MoveTo(endPos) end)
             pcall(function() remote:FireServer(savedSpawnCFrame) end)
             StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport seguro via servidor", Duration=2})
             return
         end
 
+        -- fallback client-side
         local ok, err = pcall(function()
             local hrp = char:WaitForChild("HumanoidRootPart")
-            local tween = TweenService:Create(hrp, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
-            tween:Play()
-            tween.Completed:Wait()
-            char:MoveTo(savedSpawnCFrame.Position)
+            local steps = 20
+            local startPos = hrp.Position
+            local endPos = savedSpawnCFrame.Position + Vector3.new(0,3,0)
+            for i = 1, steps do
+                if humanoid.Health <= 0 then return end
+                local interp = startPos:Lerp(endPos, i/steps)
+                hrp.CFrame = CFrame.new(interp)
+                RunService.Heartbeat:Wait()
+            end
+            char:MoveTo(endPos)
         end)
         if ok then
             StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport realizado (client-side)", Duration=2})
