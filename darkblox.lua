@@ -31,7 +31,7 @@ local savedSpawnCFrame = nil
 local spawnSaved = false
 
 local function recordOnce(character)
-    task.wait(0.2) -- delay mínimo para evitar anti-cheat
+    task.wait(0.2)
     local hrp = character:WaitForChild("HumanoidRootPart",5)
     if hrp and not spawnSaved then
         savedSpawnCFrame = hrp.CFrame
@@ -48,7 +48,7 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(recordOnce)
 
--- FUNÇÃO TELEPORT APRIMORADA
+-- FUNÇÃO TELEPORT APRIMORADA E CORRIGIDA
 local function teleport()
     if CE_Mode then
         StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Não é seguro executar.", Duration=3})
@@ -66,30 +66,29 @@ local function teleport()
 
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = char.HumanoidRootPart
 
     task.spawn(function()
-        task.wait(0.15) -- delay para evitar anti-cheat
+        task.wait(0.15)
 
         local remote = ReplicatedStorage:FindFirstChild("SafeTeleport")
         if remote and remote:IsA("RemoteEvent") then
-            -- Tween gradual antes do RemoteEvent final
+            local hrp = char:WaitForChild("HumanoidRootPart")
             local tween = TweenService:Create(hrp, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
             tween:Play()
             tween.Completed:Wait()
-            -- Envia RemoteEvent no final do tween
+            -- MOVE usando MoveTo para não morrer
+            pcall(function() char:MoveTo(savedSpawnCFrame.Position) end)
             pcall(function() remote:FireServer(savedSpawnCFrame) end)
             StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport seguro via servidor", Duration=2})
             return
         end
 
-        -- Fallback client-side com Tween mais lento
         local ok, err = pcall(function()
+            local hrp = char:WaitForChild("HumanoidRootPart")
             local tween = TweenService:Create(hrp, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = savedSpawnCFrame + Vector3.new(0,3,0)})
             tween:Play()
             tween.Completed:Wait()
-            -- Garante posição final
-            hrp.CFrame = savedSpawnCFrame + Vector3.new(0,3,0)
+            char:MoveTo(savedSpawnCFrame.Position)
         end)
         if ok then
             StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Teleport realizado (client-side)", Duration=2})
