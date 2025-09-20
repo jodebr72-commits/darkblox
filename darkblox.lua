@@ -11,14 +11,12 @@ local UserInputService = game:GetService("UserInputService")
 -- =========================
 local CE_Mode = false
 
--- Proteção getgenv/shared
 if getgenv then
     local _genv = getgenv()
     if not rawget(_genv, "shared") then rawset(_genv, "shared", {}) end
     if not rawget(_genv, "debug") then rawset(_genv, "debug", {traceback = function(str) return str end}) end
 end
 
--- Executor blacklist
 task.spawn(function()
     local blacklisted = {"solara","cryptic","xeno","ember","ronix"}
     local execName
@@ -104,7 +102,6 @@ local function teleport()
         local endPos = savedSpawnCFrame.Position + Vector3.new(0,3,0)
         local steps = 40
 
-        -- Teleporte gradual e natural, simula movimento humano
         for i = 1, steps do
             if humanoid.Health <= 0 then return end
             local interp = startPos:Lerp(endPos, i/steps)
@@ -126,16 +123,15 @@ end
 -- =========================
 -- FUNÇÃO PARA DRAG (PAINEL E BOLINHA)
 -- =========================
-local function makeDraggable(frame)
+local function makeDraggable(guiObject)
     local dragging = false
-    local dragStart = nil
-    local startPos = nil
+    local dragInput, mousePos, framePos
 
-    frame.InputBegan:Connect(function(input)
+    guiObject.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
+            mousePos = input.Position
+            framePos = guiObject.Position
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -144,15 +140,21 @@ local function makeDraggable(frame)
         end
     end)
 
-    frame.InputChanged:Connect(function(input)
+    guiObject.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
-            UserInputService.InputChanged:Connect(function(mouse)
-                if dragging and mouse.UserInputType == Enum.UserInputType.MouseMovement then
-                    local delta = mouse.Position - dragStart
-                    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                        startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-                end
-            end)
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - mousePos
+            guiObject.Position = UDim2.new(
+                framePos.X.Scale,
+                framePos.X.Offset + delta.X,
+                framePos.Y.Scale,
+                framePos.Y.Offset + delta.Y
+            )
         end
     end)
 end
@@ -248,9 +250,7 @@ local function createGui()
         StarterGui:SetCore("SendNotification", {Title="Dark Blocks", Text="Link do Discord copiado!", Duration=2})
     end)
 
-    -- =========================
     -- BOLINHA MINIMIZADA
-    -- =========================
     local logoBtn = Instance.new("ImageButton", screenGui)
     logoBtn.Size = UDim2.new(0, 50, 0, 50)
     logoBtn.Position = frame.Position
