@@ -5,28 +5,72 @@ local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
--- ANTI-CHEAT
+-- =========================
+-- ANTI-CHEAT REFORÇADO
+-- =========================
 local CE_Mode = false
-if (not getgenv) or (getgenv and type(getgenv) ~= "function") then CE_Mode = true end
-if getgenv and not getgenv().shared then CE_Mode = true; getgenv().shared = {} end
-if getgenv and not getgenv().debug then CE_Mode = true; getgenv().debug = {traceback = function(str) return str end} end
 
-local function CheckExec()
-    if identifyexecutor ~= nil and type(identifyexecutor) == "function" then
-        local suc,res = pcall(function() return identifyexecutor() end)
-        if suc and res then
-            local black = {'solara','cryptic','xeno','ember','ronix'}
-            for i,v in pairs(black) do
-                if string.find(string.lower(tostring(res)), v) then
-                    CE_Mode = true
-                end
+-- Proteger getgenv
+if getgenv then
+    local _genv = getgenv()
+    if not rawget(_genv, "shared") then rawset(_genv, "shared", {}) end
+    if not rawget(_genv, "debug") then rawset(_genv, "debug", {traceback = function(str) return str end}) end
+end
+
+-- Executor blacklist
+task.spawn(function()
+    local blacklisted = {"solara","cryptic","xeno","ember","ronix"}
+    local execName
+    pcall(function()
+        if identifyexecutor then execName = identifyexecutor() end
+    end)
+    if execName then
+        execName = string.lower(tostring(execName))
+        for _, name in pairs(blacklisted) do
+            if string.find(execName, name) then
+                CE_Mode = true
+                break
             end
         end
     end
-end
-task.spawn(function() pcall(CheckExec) end)
+end)
 
+-- Proteção de hooks em RemoteEvents críticos
+pcall(function()
+    local mt = getrawmetatable(game)
+    local old = mt.__namecall
+    setreadonly(mt,false)
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if method == "FireServer" and tostring(self) == "SafeTeleport" then
+            return old(self,...)
+        end
+        return old(self,...)
+    end)
+    setreadonly(mt,true)
+end)
+
+-- Monitoramento de movimentos impossíveis
+task.spawn(function()
+    while true do
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            local lastPos = hrp.Position
+            task.wait(0.25)
+            local dist = (hrp.Position - lastPos).Magnitude
+            if dist > 50 then -- movimento impossível
+                CE_Mode = true
+                StarterGui:SetCore("SendNotification", {Title="Anti-Cheat", Text="Movimento suspeito detectado", Duration=3})
+            end
+        end
+        task.wait(1)
+    end
+end)
+
+-- =========================
 -- SPAWN SAVE
+-- =========================
 local savedSpawnCFrame = nil
 local spawnSaved = false
 
@@ -48,7 +92,9 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(recordOnce)
 
+-- =========================
 -- TELEPORT SEGURO (CLIENT+SERVER)
+-- =========================
 local function teleport()
     if CE_Mode then
         StarterGui:SetCore("SendNotification", {Title="Teleport", Text="Não é seguro executar.", Duration=3})
@@ -69,7 +115,6 @@ local function teleport()
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if not humanoid or humanoid.Health <= 0 then return end
 
-    -- TELEPORTE GRADUAL + SERVER
     task.spawn(function()
         local hrp = char.HumanoidRootPart
         local startPos = hrp.Position
@@ -94,7 +139,9 @@ local function teleport()
     end)
 end
 
+-- =========================
 -- DRAG FUNCTION
+-- =========================
 local function makeDraggable(frame)
     local UserInputService = game:GetService("UserInputService")
     local dragging, dragInput, dragStart, startPos
@@ -128,7 +175,9 @@ local function makeDraggable(frame)
     end)
 end
 
+-- =========================
 -- GUI
+-- =========================
 local function createGui()
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
     if playerGui:FindFirstChild("DarkblocksGui") then return end
@@ -144,7 +193,7 @@ local function createGui()
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BackgroundTransparency = 0.1
     frame.BorderSizePixel = 0
-    makeDraggable(frame)
+    makeDraggable(frame) -- Painel arrastável
 
     -- Título
     local title = Instance.new("TextLabel", frame)
@@ -214,41 +263,6 @@ local function createGui()
     discordBtn.MouseButton1Click:Connect(function()
         setclipboard("https://discord.gg/7SMSD3Cf")
         StarterGui:SetCore("SendNotification", {Title="Dark Blocks", Text="Link do Discord copiado!", Duration=2})
-    end)
-
-    -- BOLINHA MINIMIZADA 50x50, hover, arrastável
-    local logoBtn = Instance.new("ImageButton", screenGui)
-    logoBtn.Size = UDim2.new(0, 50, 0, 50)
-    logoBtn.Position = UDim2.new(0.5, -25, 0.8, 0)
-    logoBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    logoBtn.BackgroundTransparency = 0
-    logoBtn.Image = "https://cdn.discordapp.com/attachments/1324111511123398708/1416978424412770425/file_00000000bc9c52308ad733d54b761129.png?ex=68cebe3e&is=68cd6cbe&hm=086ee4d4aeb4b8681b1a3493b9a9148938016e4c9dd731a4c2ff5ef3e2c69a8e&"
-    logoBtn.Visible = false
-
-    local corner = Instance.new("UICorner", logoBtn)
-    corner.CornerRadius = UDim.new(1, 0)
-    makeDraggable(logoBtn)
-
-    -- Hover efeito
-    logoBtn.MouseEnter:Connect(function()
-        logoBtn:TweenSize(UDim2.new(0, 60, 0, 60), "Out", "Quad", 0.2, true)
-        logoBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    end)
-    logoBtn.MouseLeave:Connect(function()
-        logoBtn:TweenSize(UDim2.new(0, 50, 0, 50), "Out", "Quad", 0.2, true)
-        logoBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    end)
-
-    -- Minimizar → mostra bolinha
-    minimize.MouseButton1Click:Connect(function()
-        frame.Visible = false
-        logoBtn.Visible = true
-    end)
-
-    -- Clicar na bolinha → restaura painel
-    logoBtn.MouseButton1Click:Connect(function()
-        frame.Visible = true
-        logoBtn.Visible = false
     end)
 end
 
