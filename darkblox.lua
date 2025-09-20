@@ -34,7 +34,6 @@ task.spawn(function()
     end
 end)
 
--- Proteção contra hooks em RemoteEvents críticos
 pcall(function()
     local mt = getrawmetatable(game)
     local old = mt.__namecall
@@ -173,7 +172,7 @@ local function createGui()
 
     -- Painel principal
     local frame = Instance.new("Frame", screenGui)
-    frame.Size = UDim2.new(0, 260, 0, 150)
+    frame.Size = UDim2.new(0, 260, 0, 200) -- maior para caber novo botão
     frame.Position = UDim2.new(0.5, -130, 0.7, 0)
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BackgroundTransparency = 0.1
@@ -234,10 +233,35 @@ local function createGui()
         switch.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     end)
 
+    -- Botão atravessar paredes
+    local wallBtn = Instance.new("TextButton", frame)
+    wallBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    wallBtn.Position = UDim2.new(0.05, 0, 0, 90)
+    wallBtn.Text = "Atravessar Paredes"
+    wallBtn.Font = Enum.Font.SourceSansBold
+    wallBtn.TextSize = 18
+    wallBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    wallBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    wallBtn.BorderSizePixel = 0
+
+    local noclipEnabled = false
+    wallBtn.MouseButton1Click:Connect(function()
+        noclipEnabled = not noclipEnabled
+        wallBtn.Text = noclipEnabled and "Noclip ON" or "Atravessar Paredes"
+        if LocalPlayer.Character then
+            local char = LocalPlayer.Character
+            for _, part in pairs(char:GetChildren()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                    part.CanCollide = not noclipEnabled
+                end
+            end
+        end
+    end)
+
     -- Botão Discord
     local discordBtn = Instance.new("TextButton", frame)
     discordBtn.Size = UDim2.new(0.9, 0, 0, 40)
-    discordBtn.Position = UDim2.new(0.05, 0, 0, 90)
+    discordBtn.Position = UDim2.new(0.05, 0, 0, 140)
     discordBtn.Text = "Atualizações no Discord"
     discordBtn.Font = Enum.Font.SourceSansBold
     discordBtn.TextSize = 18
