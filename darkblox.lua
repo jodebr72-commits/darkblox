@@ -170,10 +170,10 @@ local function createGui()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
-    -- Painel principal
+    -- Painel principal: lado esquerdo, centralizado verticalmente
     local frame = Instance.new("Frame", screenGui)
-    frame.Size = UDim2.new(0, 260, 0, 200) -- maior para caber novo botão
-    frame.Position = UDim2.new(0.5, -130, 0.7, 0)
+    frame.Size = UDim2.new(0, 260, 0, 200)
+    frame.Position = UDim2.new(0, 20, 0.4, -100) -- lado esquerdo, nem muito cima nem muito embaixo
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BackgroundTransparency = 0.1
     frame.BorderSizePixel = 0
