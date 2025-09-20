@@ -216,11 +216,12 @@ local function createGui()
         StarterGui:SetCore("SendNotification", {Title="Dark Blocks", Text="Link do Discord copiado!", Duration=2})
     end)
 
-    -- Bolinha (logo) para restaurar
+    -- BOLINHA MINIMIZADA 50x50, hover, arrastável
     local logoBtn = Instance.new("ImageButton", screenGui)
-    logoBtn.Size = UDim2.new(0, 60, 0, 60)
-    logoBtn.Position = UDim2.new(0.5, -30, 0.8, 0)
-    logoBtn.BackgroundTransparency = 1
+    logoBtn.Size = UDim2.new(0, 50, 0, 50)
+    logoBtn.Position = UDim2.new(0.5, -25, 0.8, 0)
+    logoBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    logoBtn.BackgroundTransparency = 0
     logoBtn.Image = "https://cdn.discordapp.com/attachments/1324111511123398708/1416978424412770425/file_00000000bc9c52308ad733d54b761129.png?ex=68cebe3e&is=68cd6cbe&hm=086ee4d4aeb4b8681b1a3493b9a9148938016e4c9dd731a4c2ff5ef3e2c69a8e&"
     logoBtn.Visible = false
 
@@ -228,11 +229,23 @@ local function createGui()
     corner.CornerRadius = UDim.new(1, 0)
     makeDraggable(logoBtn)
 
+    -- Hover efeito
+    logoBtn.MouseEnter:Connect(function()
+        logoBtn:TweenSize(UDim2.new(0, 60, 0, 60), "Out", "Quad", 0.2, true)
+        logoBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+    logoBtn.MouseLeave:Connect(function()
+        logoBtn:TweenSize(UDim2.new(0, 50, 0, 50), "Out", "Quad", 0.2, true)
+        logoBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    end)
+
+    -- Minimizar → mostra bolinha
     minimize.MouseButton1Click:Connect(function()
         frame.Visible = false
         logoBtn.Visible = true
     end)
 
+    -- Clicar na bolinha → restaura painel
     logoBtn.MouseButton1Click:Connect(function()
         frame.Visible = true
         logoBtn.Visible = false
