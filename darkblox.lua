@@ -7,11 +7,11 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 -- =========================
--- ANTI-CHEAT REFORÇADO
+-- ANTI-CHEAT PROFISSIONAL REFORÇADO
 -- =========================
 local CE_Mode = false
 
--- Proteger getgenv
+-- Proteção getgenv/shared
 if getgenv then
     local _genv = getgenv()
     if not rawget(_genv, "shared") then rawset(_genv, "shared", {}) end
@@ -36,7 +36,7 @@ task.spawn(function()
     end
 end)
 
--- Proteção de hooks em RemoteEvents críticos
+-- Proteção contra hooks em RemoteEvents críticos
 pcall(function()
     local mt = getrawmetatable(game)
     local old = mt.__namecall
@@ -102,14 +102,13 @@ local function teleport()
         local hrp = char.HumanoidRootPart
         local startPos = hrp.Position
         local endPos = savedSpawnCFrame.Position + Vector3.new(0,3,0)
-        local steps = 30
+        local steps = 40
 
-        -- Teleporte gradual e natural (reduz detecção)
+        -- Teleporte gradual e natural, simula movimento humano
         for i = 1, steps do
             if humanoid.Health <= 0 then return end
             local interp = startPos:Lerp(endPos, i/steps)
-            -- Pequena variação para simular movimento humano
-            hrp.CFrame = CFrame.new(interp + Vector3.new(math.random()*0.05,0,math.random()*0.05))
+            hrp.CFrame = CFrame.new(interp + Vector3.new(math.random()*0.03,0,math.random()*0.03))
             RunService.Heartbeat:Wait()
         end
 
@@ -128,27 +127,32 @@ end
 -- FUNÇÃO PARA DRAG (PAINEL E BOLINHA)
 -- =========================
 local function makeDraggable(frame)
-    local dragging, dragInput, dragStart, startPos
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
             end)
         end
     end)
+
     frame.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            UserInputService.InputChanged:Connect(function(mouse)
+                if dragging and mouse.UserInputType == Enum.UserInputType.MouseMovement then
+                    local delta = mouse.Position - dragStart
+                    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                        startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                end
+            end)
         end
     end)
 end
@@ -172,7 +176,7 @@ local function createGui()
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BackgroundTransparency = 0.1
     frame.BorderSizePixel = 0
-    makeDraggable(frame) -- torna arrastável
+    makeDraggable(frame)
 
     -- Título
     local title = Instance.new("TextLabel", frame)
@@ -254,7 +258,7 @@ local function createGui()
     logoBtn.BackgroundTransparency = 0
     logoBtn.Image = "https://cdn.discordapp.com/attachments/1324111511123398708/1416978424412770425/file_00000000bc9c52308ad733d54b761129.png"
     logoBtn.Visible = false
-    makeDraggable(logoBtn) -- bolinha arrastável
+    makeDraggable(logoBtn)
 
     local corner = Instance.new("UICorner", logoBtn)
     corner.CornerRadius = UDim.new(1,0)
