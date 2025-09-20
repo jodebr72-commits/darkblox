@@ -4,6 +4,7 @@ local LocalPlayer = Players.LocalPlayer
 local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 -- =========================
 -- ANTI-CHEAT REFORÇADO
@@ -48,24 +49,6 @@ pcall(function()
         return old(self,...)
     end)
     setreadonly(mt,true)
-end)
-
--- Monitoramento de movimentos impossíveis
-task.spawn(function()
-    while true do
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            local lastPos = hrp.Position
-            task.wait(0.25)
-            local dist = (hrp.Position - lastPos).Magnitude
-            if dist > 50 then -- movimento impossível
-                CE_Mode = true
-                StarterGui:SetCore("SendNotification", {Title="Anti-Cheat", Text="Movimento suspeito detectado", Duration=3})
-            end
-        end
-        task.wait(1)
-    end
 end)
 
 -- =========================
@@ -119,12 +102,14 @@ local function teleport()
         local hrp = char.HumanoidRootPart
         local startPos = hrp.Position
         local endPos = savedSpawnCFrame.Position + Vector3.new(0,3,0)
-        local steps = 25
+        local steps = 30
 
+        -- Teleporte gradual e natural (reduz detecção)
         for i = 1, steps do
             if humanoid.Health <= 0 then return end
             local interp = startPos:Lerp(endPos, i/steps)
-            hrp.CFrame = CFrame.new(interp)
+            -- Pequena variação para simular movimento humano
+            hrp.CFrame = CFrame.new(interp + Vector3.new(math.random()*0.05,0,math.random()*0.05))
             RunService.Heartbeat:Wait()
         end
 
@@ -140,32 +125,25 @@ local function teleport()
 end
 
 -- =========================
--- DRAG FUNCTION
+-- FUNÇÃO PARA DRAG (PAINEL E BOLINHA)
 -- =========================
 local function makeDraggable(frame)
-    local UserInputService = game:GetService("UserInputService")
     local dragging, dragInput, dragStart, startPos
-
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
-
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
     end)
-
     frame.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
         end
     end)
-
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
@@ -176,7 +154,7 @@ local function makeDraggable(frame)
 end
 
 -- =========================
--- GUI
+-- GUI PRINCIPAL
 -- =========================
 local function createGui()
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -187,13 +165,14 @@ local function createGui()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
+    -- Painel principal
     local frame = Instance.new("Frame", screenGui)
     frame.Size = UDim2.new(0, 260, 0, 150)
     frame.Position = UDim2.new(0.5, -130, 0.7, 0)
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BackgroundTransparency = 0.1
     frame.BorderSizePixel = 0
-    makeDraggable(frame) -- Painel arrastável
+    makeDraggable(frame) -- torna arrastável
 
     -- Título
     local title = Instance.new("TextLabel", frame)
@@ -263,6 +242,34 @@ local function createGui()
     discordBtn.MouseButton1Click:Connect(function()
         setclipboard("https://discord.gg/7SMSD3Cf")
         StarterGui:SetCore("SendNotification", {Title="Dark Blocks", Text="Link do Discord copiado!", Duration=2})
+    end)
+
+    -- =========================
+    -- BOLINHA MINIMIZADA
+    -- =========================
+    local logoBtn = Instance.new("ImageButton", screenGui)
+    logoBtn.Size = UDim2.new(0, 50, 0, 50)
+    logoBtn.Position = frame.Position
+    logoBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    logoBtn.BackgroundTransparency = 0
+    logoBtn.Image = "https://cdn.discordapp.com/attachments/1324111511123398708/1416978424412770425/file_00000000bc9c52308ad733d54b761129.png"
+    logoBtn.Visible = false
+    makeDraggable(logoBtn) -- bolinha arrastável
+
+    local corner = Instance.new("UICorner", logoBtn)
+    corner.CornerRadius = UDim.new(1,0)
+
+    -- Minimizar/restaurar
+    minimize.MouseButton1Click:Connect(function()
+        frame.Visible = false
+        logoBtn.Position = frame.Position
+        logoBtn.Visible = true
+    end)
+
+    logoBtn.MouseButton1Click:Connect(function()
+        frame.Position = logoBtn.Position
+        frame.Visible = true
+        logoBtn.Visible = false
     end)
 end
 
